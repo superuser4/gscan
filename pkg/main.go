@@ -5,30 +5,38 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
 	var (
-		IPaddr    string
-		portRange int = 0
+		ipAddr    string
+		portRange int
+		timeoutMs int
+		workers   int
 	)
 
-	flag.StringVar(&IPaddr, "ip", "127.0.0.1", "Target IP address")
-	flag.IntVar(&portRange, "p", 1000, "Target Port Range, Default: Most common 1000 Ports")
+	flag.StringVar(&ipAddr, "ip", "", "Target IP address (required)")
+	flag.IntVar(&portRange, "p", 1000, "Max port number to scan (default 1000)")
+	flag.IntVar(&timeoutMs, "t", 500, "Timeout in milliseconds (default 500)")
+	flag.IntVar(&workers, "w", 200, "Number of concurrent workers (default 200)")
 	flag.Parse()
 
-	if flag.NFlag() == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	if IPaddr == "" {
+	if ipAddr == "" {
 		fmt.Fprintln(os.Stderr, "Error: --ip is required")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	log.Println("GScan Scanning Target:", IPaddr)
+	log.Printf("GScan scanning %s ports 1-%d with %d workers, %dms timeout\n",
+		ipAddr, portRange, workers, timeoutMs)
 	fmt.Println("PORT	STATE	SERVICE")
-	ScanTarget(IPaddr, portRange)
+
+	scanner := &PortScanner{
+		IP:           ipAddr,
+		MaxPort:      portRange,
+		Timeout:      time.Duration(timeoutMs) * time.Millisecond,
+		WorkerAmount: workers,
+	}
+	scanner.ScanTarget()
 }
