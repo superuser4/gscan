@@ -12,12 +12,12 @@ import (
 )
 
 func ScanTarget(IP string, Ports int) {
-	var (
-		wg        sync.WaitGroup
-		sem       = make(chan struct{}, 1000)
-		mu        sync.Mutex
-		openPorts []int
-	)
+	var wg sync.WaitGroup
+	var openPorts []int
+	var timeout time.Duration = 500
+	var workers int = 200
+
+	sem := make(chan struct{}, workers)
 
 	for port := 1; port <= Ports; port++ {
 		wg.Add(1)
@@ -28,14 +28,12 @@ func ScanTarget(IP string, Ports int) {
 			defer func() { <-sem }()
 
 			addr := fmt.Sprintf("%s:%d", IP, p)
-			conn, err := net.DialTimeout("tcp", addr, 500*time.Millisecond)
+			conn, err := net.DialTimeout("tcp", addr, timeout*time.Millisecond)
 			if err != nil {
 				return
 			}
 			conn.Close()
-			mu.Lock()
 			openPorts = append(openPorts, p)
-			mu.Unlock()
 		}(port)
 	}
 	wg.Wait()
@@ -53,7 +51,7 @@ func main() {
 	)
 
 	flag.StringVar(&IPaddr, "ip", "127.0.0.1", "Target IP address")
-	flag.IntVar(&portRange, "ports", 1000, "Target Port Range")
+	flag.IntVar(&portRange, "port", 1000, "Target Port Range")
 	flag.Parse()
 
 	if flag.NFlag() == 0 {
