@@ -5,12 +5,19 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"time"
 )
 
 func ScanTarget(IP string, Ports int) {
+	var wg sync.WaitGroup
+
 	for port := 1; port <= Ports; port++ {
-		func(p int) {
+		wg.Add(1)
+
+		go func(p int) {
+			defer wg.Done()
+
 			conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", IP, p), 500*time.Millisecond)
 			if err != nil {
 				return
@@ -19,6 +26,7 @@ func ScanTarget(IP string, Ports int) {
 			fmt.Printf("%d	open\n", p)
 		}(port)
 	}
+	wg.Wait()
 }
 
 func main() {
