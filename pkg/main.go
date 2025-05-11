@@ -4,54 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
-	"sort"
-	"sync"
-	"time"
 )
-
-func ScanTarget(IP string, Ports int) {
-	var wg sync.WaitGroup
-	var openPorts []int
-	var timeout time.Duration = 500
-	var workers int = 200
-
-	sem := make(chan struct{}, workers)
-
-	for port := 1; port <= Ports; port++ {
-		wg.Add(1)
-		sem <- struct{}{}
-
-		go func(p int) {
-			defer wg.Done()
-			defer func() { <-sem }()
-
-			addr := fmt.Sprintf("%s:%d", IP, p)
-			conn, err := net.DialTimeout("tcp", addr, timeout*time.Millisecond)
-			if err != nil {
-				return
-			}
-			conn.Close()
-			openPorts = append(openPorts, p)
-		}(port)
-	}
-	wg.Wait()
-
-	sort.Ints(openPorts)
-	for i := 0; i < len(openPorts); i++ {
-		fmt.Printf("%d	%s\n", openPorts[i], "open")
-	}
-}
 
 func main() {
 	var (
 		IPaddr    string
-		portRange int
+		portRange int = 0
 	)
 
 	flag.StringVar(&IPaddr, "ip", "127.0.0.1", "Target IP address")
-	flag.IntVar(&portRange, "port", 1000, "Target Port Range")
+	flag.IntVar(&portRange, "p", 1000, "Target Port Range, Default: Most common 1000 Ports")
 	flag.Parse()
 
 	if flag.NFlag() == 0 {
@@ -60,7 +23,7 @@ func main() {
 	}
 
 	if IPaddr == "" {
-		fmt.Fprintln(os.Stderr, "Error: --ip is required.\n")
+		fmt.Fprintln(os.Stderr, "Error: --ip is required")
 		flag.Usage()
 		os.Exit(1)
 	}
