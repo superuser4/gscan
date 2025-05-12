@@ -16,10 +16,10 @@ func main() {
 		workers   int
 	)
 
-	flag.StringVar(&ipAddr, "ip", "", "Target IP address (required)")
-	flag.IntVar(&portRange, "p", 1000, "Max port number to scan (default 1000)")
-	flag.IntVar(&timeoutMs, "t", 500, "Timeout in milliseconds (default 500)")
-	flag.IntVar(&workers, "w", 200, "Number of concurrent workers (default 200)")
+	flag.StringVar(&ipAddr, "ip", "127.0.0.1", "Target IP address (required)")
+	flag.IntVar(&portRange, "p", 0, "Max port number to scan (Most common 1000)")
+	flag.IntVar(&timeoutMs, "t", 1000, "Timeout in milliseconds (default 500)")
+	flag.IntVar(&workers, "w", 100, "Number of concurrent workers (default 200)")
 	flag.Parse()
 
 	if ipAddr == "" {
