@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -20,7 +23,7 @@ type PortScanner struct {
 	wg    sync.WaitGroup
 	sem   chan struct{}
 	mu    sync.Mutex
-	opens map[int][]string
+	opens []map[int][]string
 }
 
 func (s *PortScanner) ScanPort(port int) {
@@ -28,20 +31,23 @@ func (s *PortScanner) ScanPort(port int) {
 	defer func() { <-s.sem }()
 
 	addr := fmt.Sprintf("%s:%d", s.IP, port)
-	//fmt.Printf("Scanning Port: %d\n", port)
+	//fmt.Printf("Scannning Port: %d\n", port)
 	conn, err := net.DialTimeout("tcp", addr, s.Timeout)
 	if err == nil {
-		var banner []byte
-		// banner grab to enumerate service
-
+		conn.SetReadDeadline(time.Now().Add(s.Timeout))
+		reader := bufio.NewReader(conn)
+		banner, _ := reader.ReadString('\n')
 		conn.Close()
 
 		s.mu.Lock()
-		s.opens[port] = append(s.opens[port], "open")
-		s.opens[port] = append(s.opens[port], string(banner))
+		portInfo := make(map[int][]string)
+		portInfo[port] = append(portInfo[port], "open")
+		portInfo[port] = append(portInfo[port], string(banner))
+		s.opens = append(s.opens, portInfo)
 		s.mu.Unlock()
 	} else {
-		// Connections failed, either closed or filtered or scanning too fast
+		if errors.Is(err, os.ErrDeadlineExceeded) {
+		}
 	}
 }
 
@@ -66,7 +72,9 @@ func (s *PortScanner) ScanTarget() {
 
 	s.wg.Wait()
 
-	for key, value := range s.opens {
-		fmt.Printf("%d	%s	%s\n", key, value[0], value[1])
+	for i := 0; i < len(s.opens); i++ {
+		for port, info := range s.opens[i] {
+			fmt.Printf("%d	%s	%s\n", port, info[0], info[1])
+		}
 	}
 }
