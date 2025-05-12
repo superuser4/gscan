@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"sort"
 	"sync"
 	"time"
 )
@@ -16,11 +15,12 @@ type PortScanner struct {
 	MaxPort      int
 	Timeout      time.Duration
 	WorkerAmount int
+	MaxRetries   int
 
 	wg    sync.WaitGroup
 	sem   chan struct{}
 	mu    sync.Mutex
-	opens []int
+	opens map[int][]string
 }
 
 func (s *PortScanner) ScanPort(port int) {
@@ -28,12 +28,20 @@ func (s *PortScanner) ScanPort(port int) {
 	defer func() { <-s.sem }()
 
 	addr := fmt.Sprintf("%s:%d", s.IP, port)
+	//fmt.Printf("Scanning Port: %d\n", port)
 	conn, err := net.DialTimeout("tcp", addr, s.Timeout)
 	if err == nil {
+		var banner []byte
+		// banner grab to enumerate service
+
 		conn.Close()
+
 		s.mu.Lock()
-		s.opens = append(s.opens, port)
+		s.opens[port] = append(s.opens[port], "open")
+		s.opens[port] = append(s.opens[port], string(banner))
 		s.mu.Unlock()
+	} else {
+		// Connections failed, either closed or filtered or scanning too fast
 	}
 }
 
@@ -58,8 +66,7 @@ func (s *PortScanner) ScanTarget() {
 
 	s.wg.Wait()
 
-	sort.Ints(s.opens)
-	for _, p := range s.opens {
-		fmt.Printf("%d	open\n", p)
+	for key, value := range s.opens {
+		fmt.Printf("%d	%s	%s\n", key, value[0], value[1])
 	}
 }
