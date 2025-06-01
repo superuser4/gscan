@@ -1,26 +1,34 @@
-mod portscan;
 use clap::Parser;
-use portscan::scan_ports;
+use std::borrow::Cow;
+mod gscan;
 
 #[derive(Parser,Debug)]
-#[command(version, about, long_about = None)]
+#[command(name = "GScan",version = "0.1.0", about="Concurrent Port Scanner", long_about = None)]
 struct Args {
 
-    ip_addr: String,
-    port_range: u16,
+    #[arg(short, long)]
+    ip: String,
+
+    #[arg(short,long)]
+    port: Option<u16>,
 }
 
-fn main() {
-    println!("GScan Started at {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
-    
+fn main() { 
     let args = Args::parse();
-    let ip_addr: String = args.ip_addr; 
-    let ports: u16 = args.port_range;
+    let ip_addr: String = args.ip; 
+    let ports: Cow<[u16]> = match args.port {
+        Some(port) => {
+            let range_vec: Vec<u16> = (1..port).collect();
+            Cow::Owned(range_vec)
+        }
+        None => Cow::Borrowed(gscan::scanner::MOST_COMMON_TCP), 
+    };
 
+    
+    println!("GScan Started at {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
     println!("Started Scanning IP: {}", ip_addr);
     println!("Port\tStatus\tService"); 
     println!("----\t------\t-------");
     
-    let arr: Vec<u16> = (0..ports).collect();
-    scan_ports(&ip_addr, arr); 
+    gscan::scanner::scan_ports(&ip_addr, ports); 
 }
