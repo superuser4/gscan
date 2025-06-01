@@ -5,12 +5,19 @@ mod gscan;
 #[derive(Parser,Debug)]
 #[command(name = "GScan",version = "0.1.0", about="Concurrent Port Scanner", long_about = None)]
 struct Args {
-
-    #[arg(short, long)]
     ip: String,
-
+    
+    /// Max retries per port
+    #[arg(short, long, default_value = "2")]
+    retry: u8,
+    
+    /// Port range to scan, default is the top 1000 most common ports. 
     #[arg(short,long)]
     port: Option<u16>,
+
+    /// Toggles verbosity
+    #[arg(short,long)]
+    verbose: bool,
 }
 
 fn main() { 
@@ -30,5 +37,5 @@ fn main() {
     println!("Port\tStatus\tService"); 
     println!("----\t------\t-------");
     
-    gscan::scanner::scan_ports(&ip_addr, ports); 
+    gscan::scanner::scan_ports(&ip_addr, ports, args.verbose, args.retry); 
 }
