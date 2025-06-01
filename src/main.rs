@@ -5,12 +5,13 @@ use portscan::scan_ports;
 #[derive(Parser,Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
+
     ip_addr: String,
     port_range: u16,
 }
 
 fn main() {
-    println!("GScan v0.1.0 Started at {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
+    println!("GScan Started at {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
     
     let args = Args::parse();
     let ip_addr: String = args.ip_addr; 

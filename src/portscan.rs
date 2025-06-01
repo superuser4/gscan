@@ -7,7 +7,7 @@ fn scan_port(ip_addr: &String, port: u16) -> bool {
 
 pub fn scan_ports(ip_addr: &String, ports: Vec<u16>) {
     for port in ports {
-        if scan_port(&ip_addr, port) {
+        if scan_port(ip_addr, port) {
             println!("{}\topen", port);
         }
     }
